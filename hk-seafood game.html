@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Hong Kong Sustainable Seafood Sorter</title>
+  <style>
+    body {
+      background: #e0f7fa;
+      font-family: "Segoe UI", "Microsoft JhengHei", "PingFang TC", Arial, sans-serif;
+      text-align: center;
+      padding: 15px;
+      margin: 0;
+    }
+    h2 {
+      color: #00695c;
+      margin-bottom: 8px;
+      font-size: 1.8em;
+    }
+    .subtitle {
+      margin-bottom: 15px;
+      color: #333;
+    }
+    #lives {
+      font-size: 1.8em;
+      margin: 10px 0;
+      min-height: 30px;
+      color: #d32f2f;
+    }
+    .zone {
+      width: 320px;
+      height: 70px;
+      margin: 12px auto;
+      border: 2px dashed #555;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.25em;
+      cursor: pointer;
+    }
+    .good { background: #c8e6c9; color: #2e7d32; }
+    .bad { background: #ffcdd2; color: #c62828; }
+    .fish {
+      display: inline-block;
+      background: white;
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      width: 130px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .fish-emoji {
+      font-size: 2.2em;
+      margin-bottom: 6px;
+    }
+    .fish-name-en {
+      font-size: 0.9em;
+      font-weight: bold;
+      color: #222;
+      line-height: 1.2;
+    }
+    .fish-name-zh {
+      font-size: 1.1em;
+      color: #006064;
+      margin-top: 4px;
+    }
+    #feedback {
+      margin: 15px;
+      min-height: 26px;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    #gameOver {
+      font-size: 2em;
+      color: #c62828;
+      font-weight: bold;
+      margin: 20px;
+      display: none;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1.1em;
+      background: #00796b;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #004d40;
+    }
+  </style>
+</head>
+<body>
+  <h2>Hong Kong Sustainable Seafood Sorter</h2>
+  <p class="subtitle">Click a seafood, then choose ✅ Sustainable or ❌ Not Sustainable!</p>
+
+  <div id="lives">❤️❤️❤️</div>
+
+  <div class="zone good" onclick="check(true)">✅ Sustainable</div>
+  <div class="zone bad" onclick="check(false)">❌ Not Sustainable</div>
+
+  <div id="feedback"></div>
+  <div id="gameOver">💀 Game Over!</div>
+
+  <div id="fishArea"></div>
+
+  <button onclick="reset()">🔄 Reset Game</button>
+
+  <script>
+    const seafoodList = [
+      { en: "Red Bigeye (Hong Kong)", zh: "大眼雞（香港）", safe: false, emoji: "🐟" },
+      { en: "Chinese Perch", zh: "桂花魚", safe: false, emoji: "🐠" },
+      { en: "Sabah Grouper", zh: "沙巴龍躉", safe: false, emoji: "🐡" },
+      { en: "Boston Lobster (USA)", zh: "波士頓龍蝦（美國）", safe: false, emoji: "🦞" },
+      { en: "Scallop", zh: "帶子", safe: true, emoji: "🐚" },
+      { en: "Sardine (Morocco)", zh: "沙甸魚（摩洛哥）", safe: true, emoji: "🐟" },
+      { en: "Chilean Blue Mussel (Chile)", zh: "藍青口（智利）", safe: true, emoji: "🦪" },
+      { en: "Pacific Cupped Oyster", zh: "蠔", safe: true, emoji: "🦪" }
+    ];
+
+    let selected = null;
+    let lives = 3;
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function updateLives() {
+      const livesEl = document.getElementById('lives');
+      if (lives <= 0) {
+        livesEl.textContent = '';
+        document.getElementById('gameOver').style.display = 'block';
+        // Disable zones
+        document.querySelector('.good').style.pointerEvents = 'none';
+        document.querySelector('.bad').style.pointerEvents = 'none';
+        return;
+      }
+      livesEl.textContent = '❤️'.repeat(lives);
+    }
+
+    function renderFish() {
+      const area = document.getElementById('fishArea');
+      area.innerHTML = '';
+      const shuffled = shuffle(seafoodList);
+      shuffled.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'fish';
+        div.dataset.safe = item.safe;
+        div.innerHTML = `
+          <div class="fish-emoji">${item.emoji}</div>
+          <div class="fish-name-en">${item.en}</div>
+          <div class="fish-name-zh">${item.zh}</div>
+        `;
+        div.onclick = () => select(div);
+        area.appendChild(div);
+      });
+    }
+
+    function select(fish) {
+      if (lives <= 0) return;
+      if (selected) selected.style.border = '';
+      selected = fish;
+      fish.style.border = '2px solid #0288d1';
+    }
+
+    function check(isGoodZone) {
+      if (!selected || lives <= 0) return;
+      const isSafe = selected.dataset.safe === 'true';
+      const correct = (isSafe && isGoodZone) || (!isSafe && !isGoodZone);
+      
+      const fb = document.getElementById('feedback');
+      if (correct) {
+        fb.textContent = '✅ Correct!';
+        fb.style.color = 'green';
+        selected.style.display = 'none';
+      } else {
+        fb.textContent = '❌ Wrong! Try again.';
+        fb.style.color = 'red';
+        lives--;
+        updateLives();
+      }
+      
+      setTimeout(() => {
+        selected = null;
+        fb.textContent = '';
+      }, 1800);
+    }
+
+    function reset() {
+      lives = 3;
+      document.getElementById('gameOver').style.display = 'none';
+      document.querySelector('.good').style.pointerEvents = 'auto';
+      document.querySelector('.bad').style.pointerEvents = 'auto';
+      updateLives();
+      renderFish();
+      selected = null;
+      document.getElementById('feedback').textContent = '';
+    }
+
+    renderFish();
+    updateLives();
+  </script>
+</body>
+</html>
